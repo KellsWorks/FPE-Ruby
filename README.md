@@ -1,4 +1,4 @@
-# Format Preserving Algorithm in Ruby
+# Format Preserving Encryption Algorithm in Ruby
 
 Format preserving encryption (FPE) is a method of encryption where the resulting cipher text has the same form as the input clear text. The form of the text can vary according to use and the application. One example is a 16 digit credit card number. After using FPE to encrypt a credit card number, the resulting cipher text is another 16 digit number. In this example of the credit card number, the output cipher text is limited to numeric digits only.
 
