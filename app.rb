@@ -1,32 +1,31 @@
 require 'openssl'
 require 'base64'
 require 'yaml'
+require 'digest'
 
 class FPEAlgorithm
   def initialize()
-    @cipher = OpenSSL::Cipher::AES.new(256, :CBC)
+    @cipher = OpenSSL::Cipher::RC4.new()
     @cipher.random_iv
   end
 
-  def encrypt(serial, key)
+  def encrypt(data, key)
     @cipher.encrypt
     @cipher.key = key
-    encrypted = @cipher.update(serial.to_s) + @cipher.final
-    Base64.strict_encode64(encrypted)
+    padded_data = data.to_s.ljust(data.to_s.length, "\x00")
+    encrypted = @cipher.update(padded_data.to_s) + @cipher.final
+    encoded = Base64.strict_encode64(encrypted)
+    packed_data = encoded.unpack("C*")
+    result = encoded.to_s.unpack("H*")[0].to_i(16)
   end
 
-  def decrypt(encrypted, key)
+  def decrypt(encrypted_data, key)
     @cipher.decrypt
     @cipher.key = key
-    decoded_encrypted = Base64.strict_decode64(encrypted)
-    decrypted = @cipher.update(decoded_encrypted) + @cipher.final
+    decoded_data = Base64.strict_decode64([encrypted_data.to_s(16)].pack('H*'))
+    decrypted = @cipher.update(decoded_data.to_s) + @cipher.final
+    decrypted.gsub!("\x00", "")
     decrypted.to_i
-  end
-
-  private
-
-  def luhn(input)
-    10 - input.to_s.split(//).collect(&:to_i).zip((1..input.to_s.length).to_a).map { |v, i| i % 2 == 0 ? (v * 2 < 10 ? v * 2 : v * 2 - 9) : v }.inject(&:+) % 10
   end
 end
 
