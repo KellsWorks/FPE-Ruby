@@ -11,13 +11,13 @@ class FPEAlgorithm
     @cipher.encrypt
     @cipher.key = key
     encrypted = @cipher.update(serial.to_s) + @cipher.final
-    Base64.strict_encode64(encrypted)  # Use strict_encode64 to avoid padding issues
+    Base64.strict_encode64(encrypted)
   end
 
   def decrypt(encrypted, key)
     @cipher.decrypt
     @cipher.key = key
-    decoded_encrypted = Base64.strict_decode64(encrypted)  # Decode with strict_decode64
+    decoded_encrypted = Base64.strict_decode64(encrypted)
     decrypted = @cipher.update(decoded_encrypted) + @cipher.final
     decrypted.to_i
   end
