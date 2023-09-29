@@ -1,50 +1,25 @@
 require 'openssl'
+require 'base64'
 
 class FPEAlgorithm
-  def initialize(key)
-    @cipher = OpenSSL::Cipher::Cipher.new('rc4-40')
-    @cipher.key = key
+  def initialize()
+    @cipher = OpenSSL::Cipher::AES.new(256, :CBC)
+    @cipher.random_iv
   end
 
-  def encrypt(serial)
+  def encrypt(serial, key)
     @cipher.encrypt
-
-    padded_serial = "%015d" % serial
-    padded_serial_array = [padded_serial.slice(0, 10).to_i, padded_serial.slice(10, 15).to_i]
-    padded_serial_packed = padded_serial_array.pack('LS')
-
-    padded_serial_packed_encrypted = @cipher.update(padded_serial_packed) + @cipher.final
-
-    order_number_pre = padded_serial_packed_encrypted.unpack('LS')
-
-    order_number_pre_padded = ["%010d" % order_number_pre[0], "%05d" % order_number_pre[1]]
-
-    order_number = [
-      luhn(order_number_pre_padded[0].to_i) + order_number_pre_padded[0].to_i,
-      luhn(order_number_pre_padded[1].to_i) + order_number_pre_padded[1].to_i
-    ]
-
-    order_number
+    @cipher.key = key
+    encrypted = @cipher.update(serial.to_s) + @cipher.final
+    Base64.strict_encode64(encrypted)  # Use strict_encode64 to avoid padding issues
   end
 
-  def decrypt(order_number, key)
-    d = OpenSSL::Cipher::Cipher.new('rc4-40')
-    d.decrypt
-    d.key = key
-
-    order_number_pre_checksum = [
-      order_number[0].to_s.slice(1, 11).to_i,
-      order_number[1].to_s.slice(1, 5).to_i
-    ]
-
-    order_number_pre_checksum_packed = order_number_pre_checksum.pack('LS')
-    padded_serial_packed_decrypted = d.update(order_number_pre_checksum_packed) + d.final
-    padded_serial_packed_decrypted_unpacked = padded_serial_packed_decrypted.unpack('LS')
-    padded_serial_packed_decrypted_unpacked_reformatted = [
-      "%010d" % padded_serial_packed_decrypted_unpacked[0],
-      "%05d" % padded_serial_packed_decrypted_unpacked[1]
-    ]
-    padded_serial_packed_decrypted_unpacked_reformatted
+  def decrypt(encrypted, key)
+    @cipher.decrypt
+    @cipher.key = key
+    decoded_encrypted = Base64.strict_decode64(encrypted)  # Decode with strict_decode64
+    decrypted = @cipher.update(decoded_encrypted) + @cipher.final
+    decrypted.to_i
   end
 
   private
@@ -57,12 +32,12 @@ end
 encryption_key = 'fdkjgfdoi4tu45fkgkljfg9485439tkjfgnjdshfghwhe54350gfgklkgje34324nkjdfhk458458435'
 decryption_key = 'fdkjgfdoi4tu45fkgkljfg9485439tkjfgnjdshfghwhe54350gfgklkgje34324nkjdfhk458458435'
 
-fpe = FPEAlgorithm.new(encryption_key)
+fpe = FPEAlgorithm.new()
 
 puts "Enter a serial number to encrypt:"
 serial_input = gets.chomp.to_i
 
-order_number = fpe.encrypt(serial_input)
+order_number = fpe.encrypt(serial_input, encryption_key)
 
 decrypted_order_number = fpe.decrypt(order_number, decryption_key)
 
