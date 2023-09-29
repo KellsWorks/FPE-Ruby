@@ -1,5 +1,6 @@
 require 'openssl'
 require 'base64'
+require 'yaml'
 
 class FPEAlgorithm
   def initialize()
@@ -29,8 +30,9 @@ class FPEAlgorithm
   end
 end
 
-encryption_key = 'fdkjgfdoi4tu45fkgkljfg9485439tkjfgnjdshfghwhe54350gfgklkgje34324nkjdfhk458458435'
-decryption_key = 'fdkjgfdoi4tu45fkgkljfg9485439tkjfgnjdshfghwhe54350gfgklkgje34324nkjdfhk458458435'
+config = YAML.load_file('config.yml')
+encryption_key = config['encryption_key']
+decryption_key = config['decryption_key']
 
 fpe = FPEAlgorithm.new()
 
